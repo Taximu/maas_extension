@@ -3,3 +3,5 @@
 Set of python scripts to extend MaaS behavior.
 ## Setup for development
     cd /root && git clone https://github.com/Taximu/maas_scripts.git
+## For more info please see: 
+https://cloudpenguin.blogspot.com/2015/07/maas-wakeonlanetherwake-manual-shutdown.html
