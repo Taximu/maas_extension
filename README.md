@@ -12,19 +12,6 @@ Inspired by this guide: [MAAS WOL/Wake Manual Shutdown Extension](https://cloudp
 
 ---
 
-## 🌐 Who’s This For?
-
-- **HR/Business Representatives**  
-  Understand that this gives IT teams remote control to power physical servers on/off — saving costs by automating hardware management.
-
-- **Managers/Decision-Makers**  
-  Enables more efficient infrastructure usage and reduced downtime, offering business continuity and lower TCO with physical hardware.
-
-- **Developers & DevOps**  
-  Gain Python scripts you can integrate into your MAAS environment to automate commissioning, deployment, and power-cycle workflows.
-
----
-
 ## ⚙️ Features
 
 - 🔌 **Wake-on‑LAN** support for remote booting of servers  
