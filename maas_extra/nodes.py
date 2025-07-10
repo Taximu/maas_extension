@@ -300,7 +300,7 @@ class NodeHandler(OperationsHandler):
         node = Node.objects.get_node_or_404(
             system_id=system_id, user=request.user,
             perm=NODE_PERMISSION.EDIT)
-	cmd = 'python /maas_extra/shutdown_manually.py ' + node.hostname
+        cmd = 'python /maas_extra/shutdown_manually.py ' + node.hostname
         os.system(cmd)
         power_action_sent = node.stop(request.user, stop_mode=stop_mode)
         if power_action_sent:
