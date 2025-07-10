@@ -2,53 +2,38 @@
 # Fabric module to deploy MaaS. Run as root user.
 #
 
-import os
-import sys
-import time
 import logging
 
 from fabric.api import *
-from fabric.operations import reboot
 from fabric.colors import cyan, green, red
-from fabric.context_managers import shell_env
-from fabric.contrib.files import append, sed, comment
-from fabric.decorators import hosts, parallel, serial
 
 logging.basicConfig(level=logging.ERROR)
 para_log = logging.getLogger('paramiko.transport')
 para_log.setLevel(logging.ERROR)
 
-env.roledefs = { 'controller' : ['hostname@ipaddress'] }
+from fabric import Connection, task
+from fabric.utils import cyan, green, red
 
-@roles('controller')
-def install_maas():
-	"""Installs MaaS on a remote machine."""
-	sudo('add-apt-repository ppa:maas-maintainers/stable')
-	sudo('apt-get update')
-	sudo('apt-get install -y maas maas-dhcp maas-dns')
-	path_to_configs = '/home/user/maas'
-	answer = 'unknown'
-	while answer != 'y' or answer != 'n':
-		eth_name = raw_input("Please specify ethernet device name for wakeonlan: ")
-		print(cyan('Ethernet device for wakeonlan is set to: ' + eth_name))
-		answer = raw_input("Correct? [y/n]:")
-		if answer == 'y':
-			put(path_to_configs + '/ether_wake.template', '/tmp/ether_wake.template')
-			config_file = '/tmp/ether_wake.template'
-			searchExp = '/usr/sbin/etherwake \$mac_address'
-			replaceExp = 'sudo /usr/sbin/etherwake -i ' + eth_name + ' \$mac_address'
-			sed(config_file, searchExp, replaceExp)
-			sudo('mv /tmp/ether_wake.template /etc/maas/templates/power/ether_wake.template')
-			run('rm -rf ' + config_file + '.bak')
-			put(path_to_configs + '/99-maas-sudoers', '/tmp/99-maas-sudoers')
-			config_file = '/tmp/99-maas-sudoers'
-			text = 'maas ALL= NOPASSWD: /usr/sbin/etherwake'
-			append(config_file, text, use_sudo=True, partial=True, escape=True, shell=False)
-			sudo('mv /tmp/99-maas-sudoers /etc/sudoers.d/99-maas-sudoers')
-			run('rm -rf ' + config_file + '.bak')
-			print(green('Wakeonlan configured. Maas is installed properly.'))
-			return
-		else:
-			print(green('Maas is installed properly.'))
-			print(red('Alert: Didn\'t setup wakeonlan. Hit possibility of not being able to do wakeonlan properly.\nPlease do manual configuration!'))
-			return
+CONTROLLER_HOST = "user@ipaddress"
+
+@task
+def install_maas(c=None):
+    """Installs MaaS on a remote machine."""
+    if not c:
+        c = Connection(CONTROLLER_HOST)
+
+    c.sudo('add-apt-repository ppa:maas-maintainers/stable -y')
+    c.sudo('apt-get update')
+    c.sudo('apt-get install -y maas maas-dhcp maas-dns')
+
+    eth_name = input("Specify ethernet device for wakeonlan: ")
+    print(cyan(f"Ethernet device set to: {eth_name}"))
+
+    if input("Correct? [y/n]: ").lower() == 'y':
+        c.put('ether_wake.template', '/tmp/ether_wake.template')
+        c.run(f"sed -i 's|/usr/sbin/etherwake \\$mac_address|sudo /usr/sbin/etherwake -i {eth_name} \\$mac_address|' /tmp/ether_wake.template")
+        c.sudo('mv /tmp/ether_wake.template /etc/maas/templates/power/')
+        c.sudo('echo "maas ALL= NOPASSWD: /usr/sbin/etherwake" >> /etc/sudoers.d/99-maas-sudoers')
+        print(green("Wake-on-LAN configured."))
+    else:
+        print(red("Warning: Wake-on-LAN not configured!"))
